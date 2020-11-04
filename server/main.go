@@ -10,18 +10,33 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"greet_server/greetpb"
-
-	"google.golang.org/grpc"
 )
 
 type server struct{}
 
-func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
-	fmt.Println("Invoked with: ", req)
+func main() {
+	fmt.Println("Hello from gRPC's Server")
+
+	lis, err := net.Listen("tcp", "0.0.0.0:50051")
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	greetpb.RegisterGreetServiceServer(s, &server{})
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("Failed to server: %v", err)
+	}
+}
+
+func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
+	log.Println("Invoked with: ", req)
 
 	firstname := req.GetGreeting().GetFirstName()
 	lastname := req.GetGreeting().GetLastName()
@@ -34,8 +49,9 @@ func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb
 	return res, nil
 }
 
-func (s *server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
-	fmt.Println("Invoked with: ", req)
+func (*server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
+	log.Println("Invoked with: ", req)
+
 	firstname := req.GetGreeting().GetFirstName()
 
 	for i := 0; i < 10; i++ {
@@ -50,9 +66,11 @@ func (s *server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greet
 	return nil
 }
 
-func (s *server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
-	request := 0
-	result := " "
+func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
+	log.Println("Long Greet Invoked")
+
+	var request int
+	var result string
 
 	for {
 		request++
@@ -73,8 +91,9 @@ func (s *server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	}
 }
 
-func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
-	fmt.Println("GreetEveryone is invoked")
+func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	log.Println("GreetEveryone is invoked")
+
 	for {
 		req, err := stream.Recv()
 		if err == io.EOF {
@@ -86,7 +105,7 @@ func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) 
 		}
 		firstName := req.GetGreeting().GetFirstName()
 		result := "Hello " + firstName
-		sendErr := stream.Send(&greetpb.GreetEveryoneResponse{
+		sendErr := stream.Send(&grfmteetpb.GreetEveryoneResponse{
 			Result: result,
 		})
 		if err != nil {
@@ -96,33 +115,21 @@ func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) 
 	}
 }
 
+// Unary rpc
+// but with error handling
 func (*server) SquareRoot(ctx context.Context, req *greetpb.SquareRootRequest) (*greetpb.SquareRootResponse, error) {
-	number := req.GetNumber()
+	log.Println("SquareRoot invoked")
 
-	if number < 0 {
+	inputNumber := req.GetNumber()
+
+	if inputNumber < 0 {
 		return nil, status.Errorf(
 			codes.InvalidArgument,
-			fmt.Sprintf("Received a negative number: %v", number),
+			fmt.Sprintf("Received a negative number: %v", inputNumber),
 		)
 	}
 
 	return &greetpb.SquareRootResponse{
-		Root: float64(math.Sqrt(float64(number))),
+		Root: math.Sqrt(float64(inputNumber)),
 	}, nil
-}
-
-func main() {
-	fmt.Println("Hello gRPC")
-
-	lis, err := net.Listen("tcp", "0.0.0.0:50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-
-	s := grpc.NewServer()
-	greetpb.RegisterGreetServiceServer(s, &server{})
-
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed to server: %v", err)
-	}
 }

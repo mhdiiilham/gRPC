@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"strconv"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"greet_server/greetpb"
 
@@ -90,6 +94,21 @@ func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) 
 		}
 
 	}
+}
+
+func (*server) SquareRoot(ctx context.Context, req *greetpb.SquareRootRequest) (*greetpb.SquareRootResponse, error) {
+	number := req.GetNumber()
+
+	if number < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Received a negative number: %v", number),
+		)
+	}
+
+	return &greetpb.SquareRootResponse{
+		Root: float64(math.Sqrt(float64(number))),
+	}, nil
 }
 
 func main() {

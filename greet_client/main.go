@@ -10,24 +10,8 @@ import (
 	"greet_client/greetpb"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
-
-func main() {
-	fmt.Println("Greet Client")
-
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Cannot connect. Error: %v", err)
-	}
-
-	defer conn.Close()
-
-	c := greetpb.NewGreetServiceClient(conn)
-	// doUnary(c)
-	// doServerStreaming(c)
-	// doClientStreaming(c)
-	doBiDiStreaming(c)
-}
 
 func doBiDiStreaming(c greetpb.GreetServiceClient) {
 	fmt.Println("Starting to do a BiDi Streaming")
@@ -183,4 +167,41 @@ func doServerStreaming(c greetpb.GreetServiceClient) {
 		}
 		log.Printf("Response froom GreetManyTimes: %v", msg.GetResult())
 	}
+}
+
+func doSquareRoot(c greetpb.GreetServiceClient) {
+	request := &greetpb.SquareRootRequest{
+		Number: int32(-4),
+	}
+	res, err := c.SquareRoot(context.Background(), request)
+
+	if err != nil {
+		respErr, ok := status.FromError(err)
+		if ok {
+			fmt.Println(respErr.Message())
+		} else {
+			log.Fatalf("Internal Server Error: %v", err)
+		}
+	}
+
+	fmt.Println("Result: ", res.GetRoot())
+
+}
+
+func main() {
+	fmt.Println("Greet Client")
+
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Cannot connect. Error: %v", err)
+	}
+
+	defer conn.Close()
+
+	c := greetpb.NewGreetServiceClient(conn)
+	// doUnary(c)
+	// doServerStreaming(c)
+	// doClientStreaming(c)
+	// doBiDiStreaming(c)
+	doSquareRoot(c)
 }

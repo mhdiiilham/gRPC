@@ -1,8 +1,8 @@
 # gRPC
 
-Why I learn gRPC?
-Well, I think it's not enough
-if I only know REST API In Go.
-So, I learn gRPC and hopefully
-I can implement this with
-work's project
+Why I learn gRPC? <br />
+Well, I think it's not enough <br />
+if I only know REST API In Go. <br />
+So, I learn gRPC and hopefully <br />
+I can implement this with <br />
+work's project <br />

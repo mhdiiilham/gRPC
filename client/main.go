@@ -176,6 +176,7 @@ func doUnary(c greetpb.GreetServiceClient, timeout time.Duration) {
 		} else {
 			fmt.Printf("Error: %s", err)
 		}
+		return
 	}
 
 	fmt.Println(res.GetResult())
@@ -217,6 +218,7 @@ func doSquareRoot(c greetpb.GreetServiceClient) {
 		} else {
 			log.Fatalf("Internal Server Error: %v", err)
 		}
+		return
 	}
 
 	fmt.Println("Result: ", res.GetRoot())

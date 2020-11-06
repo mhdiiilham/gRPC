@@ -38,6 +38,18 @@ func main() {
 func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
 	log.Println("Invoked with: ", req)
 
+	// This is just
+	// to test client deadlines
+	time.Sleep(25 * time.Second)
+
+	// This if-statement
+	// handler whether the client
+	// has cancel the request
+	if ctx.Err() == context.Canceled {
+		fmt.Println("Client has canceled the request")
+		return nil, status.Errorf(codes.Canceled, "The Client has canceled the request")
+	}
+
 	firstname := req.GetGreeting().GetFirstName()
 	lastname := req.GetGreeting().GetLastName()
 	result := "Hello " + firstname + " " + lastname
@@ -105,7 +117,7 @@ func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) er
 		}
 		firstName := req.GetGreeting().GetFirstName()
 		result := "Hello " + firstName
-		sendErr := stream.Send(&grfmteetpb.GreetEveryoneResponse{
+		sendErr := stream.Send(&greetpb.GreetEveryoneResponse{
 			Result: result,
 		})
 		if err != nil {

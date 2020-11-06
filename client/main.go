@@ -7,11 +7,32 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"greet_client/greetpb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
+
+func main() {
+	fmt.Println("Greet Client")
+
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Cannot connect. Error: %v", err)
+	}
+
+	defer conn.Close()
+
+	c := greetpb.NewGreetServiceClient(conn)
+	doUnary(c, 30*time.Second) // This should be success
+	doUnary(c, 15*time.Second) // This should be fail
+	// doServerStreaming(c)
+	// doClientStreaming(c)
+	// doBiDiStreaming(c)
+	// doSquareRoot(c)
+}
 
 func doBiDiStreaming(c greetpb.GreetServiceClient) {
 	fmt.Println("Starting to do a BiDi Streaming")
@@ -128,7 +149,7 @@ func doClientStreaming(c greetpb.GreetServiceClient) {
 
 }
 
-func doUnary(c greetpb.GreetServiceClient) {
+func doUnary(c greetpb.GreetServiceClient, timeout time.Duration) {
 
 	greetRequest := &greetpb.GreetRequest{
 		Greeting: &greetpb.Greeting{
@@ -137,10 +158,25 @@ func doUnary(c greetpb.GreetServiceClient) {
 		},
 	}
 
-	res, err := c.Greet(context.Background(), greetRequest)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	res, err := c.Greet(ctx, greetRequest)
 
 	if err != nil {
-		fmt.Printf("Error: %s", err)
+
+		statusErr, ok := status.FromError(err)
+
+		if ok {
+			if statusErr.Code() == codes.DeadlineExceeded {
+				fmt.Println("Timeout was hit!")
+			} else {
+				fmt.Println("Unexpected error: ", err)
+			}
+		} else {
+			fmt.Printf("Error: %s", err)
+		}
+		return
 	}
 
 	fmt.Println(res.GetResult())
@@ -182,26 +218,9 @@ func doSquareRoot(c greetpb.GreetServiceClient) {
 		} else {
 			log.Fatalf("Internal Server Error: %v", err)
 		}
+		return
 	}
 
 	fmt.Println("Result: ", res.GetRoot())
 
-}
-
-func main() {
-	fmt.Println("Greet Client")
-
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Cannot connect. Error: %v", err)
-	}
-
-	defer conn.Close()
-
-	c := greetpb.NewGreetServiceClient(conn)
-	// doUnary(c)
-	// doServerStreaming(c)
-	// doClientStreaming(c)
-	// doBiDiStreaming(c)
-	doSquareRoot(c)
 }

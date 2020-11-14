@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 
 	"greet_client/greetpb"
 
@@ -19,13 +18,13 @@ import (
 func main() {
 	fmt.Println("Greet Client")
 
-	certFile := "../ssl/server.crt"
-	creds, sslErr := credentials.NewClientTLSFromFile(certFile, "localhost")
-	if sslErr != nil {
-		log.Fatalf("SSL Error. Error: %v", sslErr)
-	}
-	opts := grpc.WithTransportCredentials(creds)
-	conn, err := grpc.Dial("localhost:50051", opts)
+	// certFile := "../ssl/server.crt"
+	// creds, sslErr := credentials.NewClientTLSFromFile(certFile, "localhost")
+	// if sslErr != nil {
+	// 	log.Fatalf("SSL Error. Error: %v", sslErr)
+	// }
+	// opts := grpc.WithTransportCredentials(creds)
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("Cannot connect. Error: %v", err)
 	}
